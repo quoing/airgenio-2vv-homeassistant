@@ -1,0 +1,112 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Připojení k jednotce AirGENIO",
+        "description": "Zadejte údaje Modbus TCP připojení vaší jednotky 2VV AirGENIO. IP adresu najdete na ovládacím panelu jednotky v menu Servis → Síť.",
+        "data": {
+          "host": "Adresa",
+          "port": "Port",
+          "unit_id": "Modbus ID jednotky"
+        },
+        "data_description": {
+          "host": "IP adresa nebo hostname jednotky",
+          "port": "Port Modbus TCP (výchozí 502)",
+          "unit_id": "Modbus adresa jednotky (výchozí 1)"
+        }
+      },
+      "reconfigure": {
+        "title": "Změna nastavení jednotky AirGENIO",
+        "data": {
+          "host": "Adresa",
+          "port": "Port",
+          "unit_id": "Modbus ID jednotky"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nepodařilo se připojit k jednotce",
+      "invalid_response": "Zařízení odpovědělo, ale ne jako jednotka AirGENIO",
+      "unknown": "Neočekávaná chyba"
+    },
+    "abort": {
+      "already_configured": "Tato jednotka už je nastavená"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti AirGENIO",
+        "data": {
+          "scan_interval": "Interval dotazování (sekundy)"
+        },
+        "data_description": {
+          "scan_interval": "Jak často se jednotka dotazuje přes Modbus (10-300 s)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "fan": {
+      "fan": {
+        "state_attributes": {
+          "actual_power": { "name": "Skutečný výkon ventilátorů" }
+        }
+      }
+    },
+    "sensor": {
+      "outside_temperature": { "name": "Venkovní teplota" },
+      "supply_temperature": { "name": "Teplota přívodu" },
+      "extract_temperature": { "name": "Teplota odvodu" },
+      "room_temperature": { "name": "Teplota místnosti" },
+      "water_return_temperature": { "name": "Teplota zpátečky vody" },
+      "bms_outside_readback": { "name": "BMS venkovní teplota (zpětné čtení)" },
+      "bms_room_readback": { "name": "BMS teplota místnosti (zpětné čtení)" },
+      "fan_power": { "name": "Výkon ventilátorů" },
+      "preheater_power": { "name": "Výkon předehřevu" },
+      "filter_clogging": { "name": "Zanesení filtru" },
+      "heat_recovery_efficiency": { "name": "Účinnost rekuperace" },
+      "ventilation_mode_raw": { "name": "Režim větrání (raw)" }
+    },
+    "binary_sensor": {
+      "global_error": { "name": "Porucha" },
+      "fan_error": { "name": "Porucha ventilátoru" },
+      "filter_warning": { "name": "Vyměnit filtr" },
+      "preheater_active": { "name": "Předehřev" },
+      "summer_mode": { "name": "Letní režim" },
+      "night_reduction": { "name": "Noční útlum" },
+      "sensor_fault": { "name": "Porucha čidla" }
+    },
+    "number": {
+      "temperature_setpoint": { "name": "Žádaná teplota" },
+      "bms_outside_temperature": { "name": "BMS venkovní teplota" },
+      "bms_room_temperature": { "name": "BMS teplota místnosti" }
+    },
+    "select": {
+      "temperature_sensor_source": {
+        "name": "Zdroj teploty pro regulaci",
+        "state": {
+          "supply_duct": "Přívodní potrubí",
+          "extract_duct": "Odvodní potrubí",
+          "room": "Místnost",
+          "thermostat": "Termostat",
+          "room_bms": "Místnost (BMS)"
+        }
+      }
+    },
+    "switch": {
+      "day_night_mode": { "name": "Noční profil" },
+      "automatic_temperature_control": { "name": "Automatická regulace teploty" },
+      "automatic_fan_control": { "name": "Automatická regulace ventilátorů" },
+      "bms_outside_enable": { "name": "BMS venkovní čidlo" }
+    },
+    "button": {
+      "filter_reset": { "name": "Reset počítadla filtru" }
+    }
+  },
+  "exceptions": {
+    "write_failed": {
+      "message": "Zápis do registru {register} selhal: {error}"
+    }
+  }
+}

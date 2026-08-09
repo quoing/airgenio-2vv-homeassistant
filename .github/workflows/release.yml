@@ -1,0 +1,22 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release-zip:
+    name: Attach integration zip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create zip
+        run: |
+          cd custom_components/airgenio_2vv
+          zip -r ../../airgenio_2vv.zip .
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: airgenio_2vv.zip

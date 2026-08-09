@@ -1,0 +1,40 @@
+{
+  "entity": {
+    "sensor": {
+      "outside_temperature": { "default": "mdi:thermometer" },
+      "supply_temperature": { "default": "mdi:home-import-outline" },
+      "extract_temperature": { "default": "mdi:home-export-outline" },
+      "room_temperature": { "default": "mdi:home-thermometer" },
+      "water_return_temperature": { "default": "mdi:water-thermometer" },
+      "bms_outside_readback": { "default": "mdi:swap-vertical" },
+      "bms_room_readback": { "default": "mdi:swap-vertical" },
+      "fan_power": { "default": "mdi:fan" },
+      "preheater_power": { "default": "mdi:radiator" },
+      "filter_clogging": { "default": "mdi:air-filter" },
+      "heat_recovery_efficiency": { "default": "mdi:recycle" },
+      "ventilation_mode_raw": { "default": "mdi:tune" }
+    },
+    "binary_sensor": {
+      "summer_mode": { "default": "mdi:weather-sunny" },
+      "night_reduction": { "default": "mdi:weather-night" },
+      "preheater_active": { "default": "mdi:radiator" }
+    },
+    "number": {
+      "temperature_setpoint": { "default": "mdi:thermostat" },
+      "bms_outside_temperature": { "default": "mdi:upload-network" },
+      "bms_room_temperature": { "default": "mdi:upload-network" }
+    },
+    "select": {
+      "temperature_sensor_source": { "default": "mdi:thermometer-lines" }
+    },
+    "switch": {
+      "day_night_mode": { "default": "mdi:theme-light-dark" },
+      "automatic_temperature_control": { "default": "mdi:thermostat-auto" },
+      "automatic_fan_control": { "default": "mdi:fan-auto" },
+      "bms_outside_enable": { "default": "mdi:cloud-upload" }
+    },
+    "button": {
+      "filter_reset": { "default": "mdi:restart" }
+    }
+  }
+}

@@ -1,0 +1,66 @@
+[project]
+name = "airgenio-2vv-homeassistant"
+version = "1.0.0"
+description = "Home Assistant custom integration for 2VV VENUS AirGENIO heat recovery ventilation units (Modbus TCP)"
+readme = "README.md"
+requires-python = ">=3.14.2"
+license = { text = "MIT" }
+
+[dependency-groups]
+dev = [
+    "homeassistant>=2026.7.0",
+    "pytest-homeassistant-custom-component",
+    "pymodbus>=3.10",
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "B",       # flake8-bugbear
+    "C4",      # comprehensions
+    "D",       # pydocstyle
+    "E",       # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort
+    "N",       # pep8-naming
+    "PL",      # pylint
+    "RUF",     # ruff
+    "SIM",     # simplify
+    "UP",      # pyupgrade
+    "W",       # pycodestyle warnings
+]
+ignore = [
+    "D203",    # incompatible with D211
+    "D213",    # incompatible with D212
+    "PLR0913", # many arguments - HA setup signatures
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "PLR2004"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unreachable = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "--cov=custom_components.airgenio_2vv --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["custom_components/airgenio_2vv"]
