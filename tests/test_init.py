@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
@@ -140,3 +141,35 @@ async def test_unload(hass: HomeAssistant, init_integration, mock_client) -> Non
     await hass.async_block_till_done()
     assert init_integration.state is ConfigEntryState.NOT_LOADED
     assert mock_client.closed
+
+
+async def test_unsupported_config_register(
+    hass: HomeAssistant, mock_config_entry, mock_client
+) -> None:
+    """A register rejected by the unit only disables its own entity.
+
+    Observed on a real VENUS AirGENIO Comfort: reading 25077 returns
+    Modbus exception 2 (IllegalDataAddress) even though the official 2VV
+    BMS example writes it.
+    """
+    mock_client.unsupported.add(25077)
+    mock_config_entry.add_to_hass(hass)
+    with patch(
+        "custom_components.airgenio_2vv.AirgenioModbusClient",
+        return_value=mock_client,
+    ):
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    # The affected switch is unavailable...
+    assert (
+        hass.states.get(entity_id_for(hass, "automatic_fan_control")).state
+        == "unavailable"
+    )
+    # ...while everything else works.
+    assert hass.states.get(entity_id_for(hass, "outside_temperature")).state == "25.3"
+    assert (
+        hass.states.get(entity_id_for(hass, "automatic_temperature_control")).state
+        == "on"
+    )

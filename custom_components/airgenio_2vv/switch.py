@@ -29,7 +29,7 @@ class AirgenioSwitchDescription(SwitchEntityDescription):
     """Switch description with register mapping."""
 
     register: int
-    value_fn: Callable[[AirgenioData], bool]
+    value_fn: Callable[[AirgenioData], bool | None]
 
 
 SWITCHES: tuple[AirgenioSwitchDescription, ...] = (
@@ -86,9 +86,14 @@ class AirgenioSwitch(AirgenioEntity, SwitchEntity):
         self.entity_description = description
 
     @property
-    def is_on(self) -> bool:
+    def is_on(self) -> bool | None:
         """Return the register state."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def available(self) -> bool:
+        """Unavailable when the unit does not support the register."""
+        return super().available and self.is_on is not None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Write 1 to the register."""

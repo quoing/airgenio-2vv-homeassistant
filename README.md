@@ -111,8 +111,16 @@ Requirements from the 2VV manual:
   enum is not documented for HRU units.
 - BMS temperature push accepts **0.0-60.0 °C** — sub-zero encoding for
   those two registers is not documented and therefore not guessed.
+- **Temperature setpoint writes may be silently ignored by the unit**
+  while manual temperature control is active (observed on a VENUS
+  Comfort with register 25033 = 0). The integration detects this via
+  read-back verification and shows an error instead of pretending the
+  write worked.
+- Some SERVICE registers (e.g. 25077) are rejected by some units; the
+  corresponding entity then shows as unavailable — that is expected.
 - The unit has one small PLC: keep the polling interval at 30 s unless you
-  have a reason not to; avoid multiple simultaneous Modbus masters.
+  have a reason not to. Two concurrent Modbus TCP masters are tolerated
+  (validated), but don't overdo it.
 
 ## Troubleshooting
 

@@ -38,7 +38,18 @@ class AirgenioTempSensorSelect(AirgenioEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         """Return the currently selected sensor source."""
-        return TEMP_SENSOR_OPTIONS.get(self.coordinator.data.temp_sensor_selection)
+        selection = self.coordinator.data.temp_sensor_selection
+        if selection is None:
+            return None
+        return TEMP_SENSOR_OPTIONS.get(selection)
+
+    @property
+    def available(self) -> bool:
+        """Unavailable when the unit does not support the register."""
+        return (
+            super().available
+            and self.coordinator.data.temp_sensor_selection is not None
+        )
 
     async def async_select_option(self, option: str) -> None:
         """Select a sensor source."""

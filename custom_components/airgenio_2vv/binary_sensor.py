@@ -77,7 +77,7 @@ BINARY_SENSORS: tuple[AirgenioBinarySensorDescription, ...] = (
         key="sensor_fault",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: d.sensor_status_bits != 0,
+        value_fn=lambda d: d.sensor_fault,
     ),
 )
 

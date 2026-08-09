@@ -70,6 +70,7 @@ class FakeModbusClient:
         self.writes: list[tuple[int, int]] = []
         self.fail_reads = False
         self.fail_writes = False
+        self.unsupported: set[int] = set()
         self.closed = False
 
     async def close(self) -> None:
@@ -83,6 +84,10 @@ class FakeModbusClient:
     async def read_holding(self, doc_address: int, count: int = 1) -> list[int]:
         if self.fail_reads:
             raise AirgenioModbusError("read failed (test)")
+        if doc_address in self.unsupported:
+            raise AirgenioModbusError(
+                f"Unit rejected read at {doc_address} (test: IllegalDataAddress)"
+            )
         return [self.holding_regs.get(doc_address + i, 0) for i in range(count)]
 
     async def write_register(self, doc_address: int, value: int) -> None:

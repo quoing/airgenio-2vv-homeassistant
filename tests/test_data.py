@@ -87,3 +87,18 @@ def test_heat_recovery_efficiency_missing_sensor_is_none() -> None:
 def test_heat_recovery_efficiency_clamped() -> None:
     data = make_data(temp_outside=10.0, temp_supply=30.0, temp_extract=20.0)
     assert data.heat_recovery_efficiency == 100
+
+
+def test_sensor_fault_ignores_bms_and_absent_sensors() -> None:
+    # BMS status bits (5, 6) flap during feed pauses - never a fault.
+    data = make_data(sensor_status_bits=0b01100000)
+    assert data.sensor_fault is False
+    # Absent optional sensors (room, water return read as sentinel) ignored.
+    data = make_data(sensor_status_bits=0b00011000, temp_room=None)
+    assert data.sensor_fault is False
+    # Core air-stream sensor error always counts.
+    data = make_data(sensor_status_bits=0b00000001)
+    assert data.sensor_fault is True
+    # Optional sensor error counts while the sensor delivers values.
+    data = make_data(sensor_status_bits=0b00010000, temp_room=22.0)
+    assert data.sensor_fault is True

@@ -50,6 +50,24 @@ accepted by the live unit, but the PDF's SERVICE HARD table ends at 25048.
 Treated as verified-by-example + live use. The HRU-specific XLS would
 confirm the full SERVICE HARD range.
 
+## 8. Setpoint writes (21003) silently ignored (observed 2026-08-09)
+
+On the reference unit, FC06 writes to 21003 are ACKed but the register
+keeps its value (probed at +0.05…+2 s). The unit runs with
+TemperatureControlMode 25033 = 0 (manual heat control); the setpoint is
+likely only writable with automatic control active — the 2VV COMFORT
+example that writes 21003 also sets 25033 = 1 first. Not verified by
+flipping 25033 (would change the reference unit's control mode). The
+number entity surfaces the rejection honestly via read-back verification.
+
+## 9. Register 25077 read-rejected on the reference unit
+
+Reading 25077 returns Modbus exception 2 (IllegalDataAddress) although
+2VV's own BMS example writes it. The integration treats it (and any other
+config register the unit rejects) as unsupported → entity unavailable.
+Whether a *write* would be accepted is untested — never write registers
+whose read the unit refuses.
+
 ## 7. Filter reset path
 
 Two mechanisms exist: 21016 FilterClogedTimerReset (share, documented for all

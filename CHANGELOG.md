@@ -29,3 +29,9 @@ versioning: [SemVer](https://semver.org/).
 - English + Czech translations, icon translations.
 - Write verification (read-back after every write) and reconnect with
   exponential backoff.
+- Per-register unsupported detection: SERVICE registers rejected by a
+  unit (observed with 25077) disable only their own entity instead of
+  failing the whole integration.
+- Sensor-fault logic that ignores BMS status flapping and absent optional
+  sensors (validated against a real VENUS AirGENIO Comfort — see
+  docs/validation-report.md).

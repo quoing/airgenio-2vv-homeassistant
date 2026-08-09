@@ -72,7 +72,7 @@ Doc addresses. All **Verified** on the live unit unless noted.
 | 21000 | Language | R/W | 0-10 enum | documented, DO NOT expose |
 | 21001 | SwitchON | R/W | 0=OFF, 1=ON | **Verified write + readback** (live `switch.rekuperace_zapnuto`) |
 | 21002 | AirFlowManual | R/W | ‰ of fan power (MANUAL mode); factory range per 10110-10119 | **Verified write** (fan speed) |
-| 21003 | Temperature setpoint | R/W | °C, plain (range depends on selected sensor: supply 15-45, extract/room 15-30) | **Verified write**; NOTE: setpoint is °C ×1 (not ×10) per live usage |
+| 21003 | Temperature setpoint | R/W | °C, plain (range depends on selected sensor: supply 15-45, extract/room 15-30) | **Verified read**; ⚠ write is ACKed but IGNORED on the reference unit while 25033=0 (see open-questions #8). Setpoint is °C ×1 (not ×10) |
 | 21004 | TimeSwGlobalEnable | R/W | 0/1 | documented |
 | 21005-21008 | TimeSw mode/flow/temp/onoff | R | read-only timer state | documented |
 | 21009 | BoostMode / DAY-NIGHT | R/W | 0/1 — on SC controls this is Boost; on this HRV it switches DAY/NIGHT profile, NOT free-cooling | **Verified write**; semantics per install ambiguous → expose as documented "Boost / Day-Night" switch, see open-questions #2 |
@@ -109,7 +109,7 @@ Doc addresses. All **Verified** on the live unit unless noted.
 | 25022/25023 | Modbus baudrate/parity | | documented, not exposed |
 | 25033 | TemperatureControlMode | 0 manual / 1 automatic | **Verified write** (=1 on live unit) |
 | 25042-25048 | Slave units config | | air curtain oriented |
-| 25077 | Automatic fan speed control | 0/1 | **Verified write** (=1 on live unit). ⚠ Not present in the AC-oriented PDF tables; comes from the official 2VV BMS set-once example and is accepted by the unit |
+| 25077 | Automatic fan speed control | 0/1 | ⚠ Reference unit REJECTS READS (Modbus exc. 2, observed 2026-08-09); register exists only in 2VV's worked examples, not in the PDF tables. Treated as unsupported when rejected (open-questions #9) |
 
 ## 8. HOLDING registers — BMS TEMP SENSORS block (FC03/06)
 

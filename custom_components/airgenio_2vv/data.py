@@ -49,12 +49,12 @@ class AirgenioData:
     temp_setpoint: int
     day_night: bool
 
-    # Config registers (holding)
-    bms_outside_enable: bool
-    ventilation_mode_raw: int
-    temp_sensor_selection: int
-    auto_temp_control: bool
-    auto_fan_control: bool
+    # Config registers (holding); None = register not supported by the unit
+    bms_outside_enable: bool | None
+    ventilation_mode_raw: int | None
+    temp_sensor_selection: int | None
+    auto_temp_control: bool | None
+    auto_fan_control: bool | None
 
     def status_bit(self, bit: int) -> bool:
         """Return a bit of the unit global status register."""
@@ -63,6 +63,22 @@ class AirgenioData:
     def error_bit(self, bit: int) -> bool:
         """Return a bit of the software error register."""
         return bool(self.error_bits & (1 << bit))
+
+    @property
+    def sensor_fault(self) -> bool:
+        """True when a relevant physical sensor reports an error.
+
+        Bits for optional sensors (water return, room) count only while the
+        sensor delivers a value; BMS status bits (5, 6) are excluded — they
+        legitimately flap whenever a BMS feed pauses for >30 s and the unit
+        falls back to its physical sensors.
+        """
+        mask = 0b10000111  # EXT1, EXT3, INT1, flow alarm
+        if self.temp_water_return is not None:
+            mask |= 1 << 3
+        if self.temp_room is not None:
+            mask |= 1 << 4
+        return bool(self.sensor_status_bits & mask)
 
     @property
     def heat_recovery_efficiency(self) -> float | None:
