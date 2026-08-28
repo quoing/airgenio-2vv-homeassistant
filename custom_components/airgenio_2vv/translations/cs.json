@@ -75,6 +75,7 @@
       "preheater_active": { "name": "Předehřev" },
       "summer_mode": { "name": "Letní režim" },
       "night_reduction": { "name": "Noční útlum" },
+      "door_open": { "name": "Servisní dvířka" },
       "sensor_fault": { "name": "Porucha čidla" }
     },
     "number": {

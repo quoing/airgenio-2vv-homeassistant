@@ -32,6 +32,7 @@ cloud, no extra hardware beyond the unit's LAN port.
 | Heat recovery efficiency | `sensor` | computed from the three air temperatures |
 | Problem / fan / filter / sensor fault | `binary_sensor` | decoded from the unit's error bitfields |
 | Summer mode, night reduction, preheater | `binary_sensor` (diagnostic) | |
+| Service door | `binary_sensor` (diagnostic) | the unit's own door contact (status bit 9) |
 | Night profile (DAY/NIGHT) | `switch` | register 21009; on SC controls this is "Boost" |
 | Automatic temperature / fan control | `switch` (config) | registers 25033 / 25077 |
 | Temperature sensor source | `select` (config) | supply duct / extract duct / room / thermostat / room BMS |

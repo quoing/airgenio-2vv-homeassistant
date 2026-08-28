@@ -20,6 +20,7 @@ from .const import (
     ERROR_BIT_FILTER_ERROR,
     ERROR_BIT_FILTER_WARNING,
     ERROR_BIT_GLOBAL,
+    STATUS_BIT_DOOR_OPEN,
     STATUS_BIT_NIGHT_REDUCTION,
     STATUS_BIT_SUMMER,
 )
@@ -72,6 +73,12 @@ BINARY_SENSORS: tuple[AirgenioBinarySensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         value_fn=lambda d: d.status_bit(STATUS_BIT_NIGHT_REDUCTION),
+    ),
+    AirgenioBinarySensorDescription(
+        key="door_open",
+        device_class=BinarySensorDeviceClass.DOOR,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.status_bit(STATUS_BIT_DOOR_OPEN),
     ),
     AirgenioBinarySensorDescription(
         key="sensor_fault",

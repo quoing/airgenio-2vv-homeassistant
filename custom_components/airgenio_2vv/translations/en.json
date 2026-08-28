@@ -75,6 +75,7 @@
       "preheater_active": { "name": "Preheater" },
       "summer_mode": { "name": "Summer mode" },
       "night_reduction": { "name": "Night reduction" },
+      "door_open": { "name": "Service door" },
       "sensor_fault": { "name": "Sensor fault" }
     },
     "number": {

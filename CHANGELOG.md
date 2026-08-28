@@ -6,6 +6,15 @@ versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-28
+
+### Added
+
+- Service door binary sensor (`door_open`) decoding bit 9 of the unit
+  global status register (DOC 18000). Verified against a parallel YAML
+  Modbus hub reading the same bit as mask 512. Diagnostic category,
+  `door` device class, open/closed icon states.
+
 ## [1.0.0] - 2026-08-09
 
 ### Added

@@ -57,6 +57,9 @@ STATUS_BIT_NIGHT_REDUCTION: Final = 3
 STATUS_BIT_TIMESWITCH: Final = 4
 STATUS_BIT_COOLDOWN: Final = 5
 STATUS_BIT_SUMMER: Final = 8
+# Bit 9 = unit service door open (not a bypass flap). Verified against a
+# parallel YAML Modbus hub reading the same bit as mask 512 on wire 17999.
+STATUS_BIT_DOOR_OPEN: Final = 9
 
 # Software error bits (18001)
 ERROR_BIT_FAN: Final = 0

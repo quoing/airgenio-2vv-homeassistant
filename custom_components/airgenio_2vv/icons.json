@@ -17,6 +17,7 @@
     "binary_sensor": {
       "summer_mode": { "default": "mdi:weather-sunny" },
       "night_reduction": { "default": "mdi:weather-night" },
+      "door_open": { "default": "mdi:door-closed", "state": { "on": "mdi:door-open" } },
       "preheater_active": { "default": "mdi:radiator" }
     },
     "number": {

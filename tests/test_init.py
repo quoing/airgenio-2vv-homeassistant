@@ -36,9 +36,10 @@ async def test_setup_and_sensor_states(hass: HomeAssistant, init_integration) ->
     assert (
         hass.states.get(entity_id_for(hass, "room_temperature")).state == "unavailable"
     )
-    # ON bit + summer bit
+    # ON bit + summer bit; door bit (9) not set in the fixture
     assert hass.states.get(entity_id_for(hass, "global_error")).state == "off"
     assert hass.states.get(entity_id_for(hass, "summer_mode")).state == "on"
+    assert hass.states.get(entity_id_for(hass, "door_open")).state == "off"
     # Fan: on at 20 %
     fan_state = hass.states.get(entity_id_for(hass, "fan"))
     assert fan_state.state == "on"
