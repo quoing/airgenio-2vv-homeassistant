@@ -32,6 +32,10 @@ MAX_SCAN_INTERVAL: Final = 300
 SLOW_SCAN_INTERVAL: Final = 30 * 60
 MESSAGE_SPACING: Final = 0.15
 
+DAPHNE_FAN_MIN_PERCENTAGE: Final = 20
+DAPHNE_FAN_MAX_PERCENTAGE: Final = 100
+DAPHNE_FAN_PERCENTAGE_STEP: Final = 10
+
 # --- INPUT registers (FC04) — status block -------------------------------
 REG_STATUS_GLOBAL: Final = 18000  # bitfield, see STATUS_BIT_*
 REG_STATUS_ERRORS: Final = 18001  # bitfield, see ERROR_BIT_*

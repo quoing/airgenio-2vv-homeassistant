@@ -11,6 +11,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
     CONF_MODEL,
+    DAPHNE_FAN_MAX_PERCENTAGE,
+    DAPHNE_FAN_MIN_PERCENTAGE,
+    DAPHNE_FAN_PERCENTAGE_STEP,
     DEFAULT_MODEL,
     MODEL_DAPHNE,
     REG_AIRFLOW_MANUAL,
@@ -45,6 +48,8 @@ class AirgenioFan(AirgenioEntity, FanEntity):
     def __init__(self, coordinator: Any) -> None:
         """Initialize the fan entity."""
         super().__init__(coordinator, "fan")
+        if self._minimum_percentage == DAPHNE_FAN_MIN_PERCENTAGE:
+            self._attr_speed_count = 100 // DAPHNE_FAN_PERCENTAGE_STEP
 
     @property
     def is_on(self) -> bool:
@@ -63,11 +68,11 @@ class AirgenioFan(AirgenioEntity, FanEntity):
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the airflow; 0 % turns the unit off."""
-        percentage = max(0, min(100, percentage))
+        percentage = max(0, min(DAPHNE_FAN_MAX_PERCENTAGE, percentage))
         if percentage == 0:
             await self.async_turn_off()
             return
-        percentage = max(self._minimum_percentage, percentage)
+        percentage = self._normalize_percentage(percentage)
         await self._write_only(REG_AIRFLOW_MANUAL, percentage * 10)
         if not self.coordinator.data.switch_on:
             await self._write_only(REG_SWITCH_ON, 1)
@@ -82,7 +87,7 @@ class AirgenioFan(AirgenioEntity, FanEntity):
     ) -> None:
         """Turn the unit on, optionally at a given airflow."""
         if percentage is not None and percentage > 0:
-            percentage = max(self._minimum_percentage, min(100, percentage))
+            percentage = self._normalize_percentage(percentage)
             await self._write_only(REG_AIRFLOW_MANUAL, percentage * 10)
         await self._write_only(REG_SWITCH_ON, 1)
         await self.coordinator.async_refresh()
@@ -121,5 +126,22 @@ class AirgenioFan(AirgenioEntity, FanEntity):
             self.coordinator.config_entry.data.get(CONF_MODEL, DEFAULT_MODEL)
             == MODEL_DAPHNE
         ):
-            return 20
+            return DAPHNE_FAN_MIN_PERCENTAGE
         return 1
+
+    def _normalize_percentage(self, percentage: int) -> int:
+        """Apply model-specific running range and step."""
+        percentage = max(
+            self._minimum_percentage,
+            min(DAPHNE_FAN_MAX_PERCENTAGE, percentage),
+        )
+        if self._minimum_percentage == DAPHNE_FAN_MIN_PERCENTAGE:
+            return max(
+                DAPHNE_FAN_MIN_PERCENTAGE,
+                (
+                    (percentage + DAPHNE_FAN_PERCENTAGE_STEP // 2)
+                    // DAPHNE_FAN_PERCENTAGE_STEP
+                )
+                * DAPHNE_FAN_PERCENTAGE_STEP,
+            )
+        return percentage

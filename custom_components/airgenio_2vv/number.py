@@ -18,6 +18,9 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
     CONF_MODEL,
+    DAPHNE_FAN_MAX_PERCENTAGE,
+    DAPHNE_FAN_MIN_PERCENTAGE,
+    DAPHNE_FAN_PERCENTAGE_STEP,
     DEFAULT_MODEL,
     MODEL_DAPHNE,
     REG_AIRFLOW_MANUAL,
@@ -90,9 +93,9 @@ NUMBERS: tuple[AirgenioNumberDescription, ...] = (
 DAPHNE_FAN_PERCENTAGE = AirgenioNumberDescription(
     key="fan_percentage",
     native_unit_of_measurement=PERCENTAGE,
-    native_min_value=20,
-    native_max_value=100,
-    native_step=1,
+    native_min_value=DAPHNE_FAN_MIN_PERCENTAGE,
+    native_max_value=DAPHNE_FAN_MAX_PERCENTAGE,
+    native_step=DAPHNE_FAN_PERCENTAGE_STEP,
     mode=NumberMode.SLIDER,
     register=REG_AIRFLOW_MANUAL,
     value_fn=lambda d: round(d.airflow_target_permille / 10),

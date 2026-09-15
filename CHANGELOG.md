@@ -11,11 +11,12 @@ versioning: [SemVer](https://semver.org/).
 ### Added
 
 - DAPHNE-only Fan speed control in the device Controls section, with the
-  unit's supported 20-100% range.
+  unit's supported 20-100% range and 10% step.
 
 ### Fixed
 
-- Clamp nonzero DAPHNE fan service requests to the 20% minimum.
+- Normalize nonzero DAPHNE fan service requests to its 20-100% range and 10%
+  step.
 
 ## [2.0.0] - 2026-09-15
 
