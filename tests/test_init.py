@@ -199,6 +199,7 @@ async def test_daphne_uses_boost_name(
     assert percentage_state.state == "20"
     assert percentage_state.attributes["min"] == 20
     assert percentage_state.attributes["max"] == 100
+    assert percentage_state.attributes["step"] == 10
 
     await hass.services.async_call(
         "number",
@@ -211,10 +212,14 @@ async def test_daphne_uses_boost_name(
     await hass.services.async_call(
         "fan",
         "set_percentage",
-        {"entity_id": entity_id_for(hass, "fan"), "percentage": 10},
+        {"entity_id": entity_id_for(hass, "fan"), "percentage": 25},
         blocking=True,
     )
-    assert mock_client.writes[-1] == (21002, 200)
+    assert mock_client.writes[-1] == (21002, 300)
+    assert (
+        hass.states.get(entity_id_for(hass, "fan")).attributes["percentage_step"]
+        == 10
+    )
 
 
 async def test_unsupported_config_register(

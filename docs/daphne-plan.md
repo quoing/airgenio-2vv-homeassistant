@@ -122,7 +122,7 @@ For percentage `1..100`:
 3. Request targeted runtime refresh.
 4. Do not refresh slow configuration values.
 
-DAPHNE running percentages are constrained to `20..100`. A dedicated
+DAPHNE running percentages are constrained to `20..100` in 10% steps. A dedicated
 DAPHNE-only Fan speed number entity exposes that range in the device Controls
 section because Home Assistant fan entities cannot advertise a nonzero minimum.
 
