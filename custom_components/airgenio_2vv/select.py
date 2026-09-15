@@ -53,4 +53,9 @@ class AirgenioTempSensorSelect(AirgenioEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Select a sensor source."""
-        await self._write_verified(REG_TEMP_SENSOR_SELECTION, _OPTION_TO_VALUE[option])
+        await self._write_and_refresh(
+            REG_TEMP_SENSOR_SELECTION,
+            _OPTION_TO_VALUE[option],
+            lambda data: data.temp_sensor_selection,
+            refresh_config=True,
+        )

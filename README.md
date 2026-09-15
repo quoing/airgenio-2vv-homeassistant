@@ -4,9 +4,13 @@
 [![GitHub Release](https://img.shields.io/github/release/zanyscz/airgenio-2vv-homeassistant.svg)](https://github.com/zanyscz/airgenio-2vv-homeassistant/releases)
 [![Validate](https://github.com/zanyscz/airgenio-2vv-homeassistant/actions/workflows/validate.yml/badge.svg)](https://github.com/zanyscz/airgenio-2vv-homeassistant/actions/workflows/validate.yml)
 
-Local-polling Home Assistant integration for **2VV VENUS AirGENIO** heat
+Local-polling Home Assistant integration for **2VV AirGENIO-controlled** heat
 recovery ventilation (HRV) units, communicating over **Modbus TCP** — no
 cloud, no extra hardware beyond the unit's LAN port.
+
+Requires Home Assistant **2026.9 or newer**. Connections use Home Assistant's
+shared Modbus infrastructure, preventing integrations from opening competing
+sockets to the same controller.
 
 > Unofficial community integration. Not affiliated with or endorsed by
 > 2VV s.r.o. Register documentation courtesy of the official 2VV
@@ -17,6 +21,7 @@ cloud, no extra hardware beyond the unit's LAN port.
 | Unit | Control | Status |
 |---|---|---|
 | VENUS AirGENIO Comfort (e.g. HRV-30EC-E-74-AG) | SUPERIOR / IC3 / SC board with LAN | ✅ developed & validated against a real unit |
+| DAPHNE with AirGENIO | board with Modbus TCP | Compatible shared controls; live-unit reports welcome |
 | Other AirGENIO-controlled HRU/AHU units | boards with Modbus TCP | Likely works (same register map) — reports welcome |
 | AirGENIO air curtains | COMFORT (RS-485 only) | ❌ not supported (no TCP; different feature set) |
 
@@ -33,7 +38,7 @@ cloud, no extra hardware beyond the unit's LAN port.
 | Problem / fan / filter / sensor fault | `binary_sensor` | decoded from the unit's error bitfields |
 | Summer mode, night reduction, preheater | `binary_sensor` (diagnostic) | |
 | Service door | `binary_sensor` (diagnostic) | the unit's own door contact (status bit 9) |
-| Night profile (DAY/NIGHT) | `switch` | register 21009; on SC controls this is "Boost" |
+| Boost / day-night profile | `switch` | shown as Boost for DAPHNE and Night profile for VENUS; documentation address 21009 (raw address 21008) |
 | Automatic temperature / fan control | `switch` (config) | registers 25033 / 25077 |
 | Temperature sensor source | `select` (config) | supply duct / extract duct / room / thermostat / room BMS |
 | BMS outside sensor enable | `switch` (config) | register 20044 |
@@ -42,6 +47,11 @@ cloud, no extra hardware beyond the unit's LAN port.
 | Ventilation mode (raw) | `sensor` (diagnostic, disabled) | raw register 25000 |
 
 Plus a **diagnostics download** (redacted register dump) on the device page.
+
+Register addresses in this project follow the 1-based addresses printed in
+the 2VV guide. The Modbus client converts them to 0-based wire addresses. For
+example, fan airflow `21002` writes raw address `21001`, while Boost/day-night
+`21009` writes raw address `21008`.
 
 ## Installation
 
@@ -71,8 +81,9 @@ Settings → Devices & services → **Add integration** → search **2VV AirGENI
 | Host | — | IP address of the unit (control panel: Service code 1616 → menu 21 Network; enable Modbus TCP there if needed) |
 | Port | 502 | Modbus TCP port |
 | Modbus unit ID | 1 | Slave address (Service → menu 20 Modbus RTU) |
+| Unit model | VENUS | Select VENUS or DAPHNE; this controls model-specific entities and naming |
 
-Options (gear icon): polling interval 10-300 s (default 30).
+Options (gear icon): polling interval 30-300 s (default 60).
 
 ## Feeding real temperatures into the unit (BMS)
 
@@ -119,9 +130,10 @@ Requirements from the 2VV manual:
   write worked.
 - Some SERVICE registers (e.g. 25077) are rejected by some units; the
   corresponding entity then shows as unavailable — that is expected.
-- The unit has one small PLC: keep the polling interval at 30 s unless you
-  have a reason not to. Two concurrent Modbus TCP masters are tolerated
-  (validated), but don't overdo it.
+- The unit has one small PLC. Runtime values use two batched requests every
+  60 seconds by default; service configuration is cached for 30 minutes.
+  Requests are serialized and spaced by 150 ms through Home Assistant's shared
+  Modbus connection. Avoid running an independent Modbus TCP master.
 
 ## Troubleshooting
 

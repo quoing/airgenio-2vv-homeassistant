@@ -10,17 +10,27 @@ from __future__ import annotations
 from typing import Final
 
 DOMAIN: Final = "airgenio_2vv"
+CONFIG_ENTRY_VERSION: Final = 2
 
 MANUFACTURER: Final = "2VV"
-MODEL: Final = "VENUS AirGENIO"
+CONF_MODEL: Final = "model"
+MODEL_VENUS: Final = "venus"
+MODEL_DAPHNE: Final = "daphne"
+DEFAULT_MODEL: Final = MODEL_VENUS
+MODEL_NAMES: Final = {
+    MODEL_VENUS: "VENUS AirGENIO",
+    MODEL_DAPHNE: "DAPHNE AirGENIO",
+}
 
 CONF_UNIT_ID: Final = "unit_id"
 
 DEFAULT_PORT: Final = 502
 DEFAULT_UNIT_ID: Final = 1
-DEFAULT_SCAN_INTERVAL: Final = 30
-MIN_SCAN_INTERVAL: Final = 10
+DEFAULT_SCAN_INTERVAL: Final = 60
+MIN_SCAN_INTERVAL: Final = 30
 MAX_SCAN_INTERVAL: Final = 300
+SLOW_SCAN_INTERVAL: Final = 30 * 60
+MESSAGE_SPACING: Final = 0.15
 
 # --- INPUT registers (FC04) — status block -------------------------------
 REG_STATUS_GLOBAL: Final = 18000  # bitfield, see STATUS_BIT_*
@@ -71,9 +81,9 @@ ERROR_BIT_GLOBAL: Final = 7
 
 # --- HOLDING registers (FC03/06) — SHARE block ----------------------------
 REG_SWITCH_ON: Final = 21001  # 0=OFF, 1=ON
-REG_AIRFLOW_MANUAL: Final = 21002  # ‰ of fan power
+REG_AIRFLOW_MANUAL: Final = 21002  # ‰ of fan power (wire address 21001)
 REG_TEMP_SETPOINT: Final = 21003  # °C (plain, NOT x10)
-REG_DAY_NIGHT: Final = 21009  # BoostMode / DAY-NIGHT (0=DAY, 1=NIGHT)
+REG_DAY_NIGHT: Final = 21009  # Boost / DAY-NIGHT (wire address 21008)
 REG_FILTER_RESET: Final = 21016  # write 1 = reset filter timer
 
 SHARE_BLOCK_START: Final = REG_SWITCH_ON

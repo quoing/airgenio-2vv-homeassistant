@@ -5,13 +5,11 @@ from __future__ import annotations
 from homeassistant.components.button import ButtonEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import DOMAIN, REG_FILTER_RESET
+from .const import REG_FILTER_RESET
 from .coordinator import Airgenio2vvConfigEntry, AirgenioCoordinator
 from .entity import AirgenioEntity
-from .modbus_client import AirgenioModbusError
 
 PARALLEL_UPDATES = 0
 
@@ -36,15 +34,4 @@ class AirgenioFilterResetButton(AirgenioEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         """Write the reset command (self-clearing, no read-back verify)."""
-        try:
-            await self.coordinator.client.write_register(REG_FILTER_RESET, 1)
-        except AirgenioModbusError as err:
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key="write_failed",
-                translation_placeholders={
-                    "register": str(REG_FILTER_RESET),
-                    "error": str(err),
-                },
-            ) from err
-        await self.coordinator.async_request_refresh()
+        await self._write_and_refresh(REG_FILTER_RESET, 1)

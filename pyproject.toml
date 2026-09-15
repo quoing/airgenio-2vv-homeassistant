@@ -1,16 +1,17 @@
 [project]
 name = "airgenio-2vv-homeassistant"
-version = "1.1.0"
-description = "Home Assistant custom integration for 2VV VENUS AirGENIO heat recovery ventilation units (Modbus TCP)"
+version = "2.0.0"
+description = "Home Assistant custom integration for 2VV AirGENIO ventilation units (Modbus TCP)"
 readme = "README.md"
 requires-python = ">=3.14.2"
 license = { text = "MIT" }
 
 [dependency-groups]
 dev = [
-    "homeassistant>=2026.7.0",
+    "homeassistant>=2026.9.0",
+    "modbus-connection[tmodbus]==4.10.0",
+    "pymodbus==3.13.1",
     "pytest-homeassistant-custom-component",
-    "pymodbus>=3.10",
     "ruff",
     "mypy",
     "pytest",

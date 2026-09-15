@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -21,6 +22,7 @@ from .const import (
     REG_VENTILATION_MODE,
     SHARE_BLOCK_COUNT,
     SHARE_BLOCK_START,
+    SLOW_SCAN_INTERVAL,
     STATUS_BLOCK_COUNT,
     STATUS_BLOCK_START,
 )
@@ -58,6 +60,14 @@ class AirgenioCoordinator(DataUpdateCoordinator[AirgenioData]):
         )
         self.client = client
         self._unsupported_registers: set[int] = set()
+        self._config: dict[int, int | None] = {}
+        self._last_config_update = 0.0
+        self._force_config_refresh = False
+
+    async def async_refresh_config(self) -> None:
+        """Refresh runtime and slow configuration registers now."""
+        self._force_config_refresh = True
+        await self.async_refresh()
 
     async def _async_update_data(self) -> AirgenioData:
         """Read all register blocks and decode them."""
@@ -66,26 +76,15 @@ class AirgenioCoordinator(DataUpdateCoordinator[AirgenioData]):
                 STATUS_BLOCK_START, STATUS_BLOCK_COUNT
             )
             share = await self.client.read_holding(SHARE_BLOCK_START, SHARE_BLOCK_COUNT)
-            config: dict[int, int | None] = {}
-            for register in CONFIG_REGISTERS:
-                if register in self._unsupported_registers:
-                    config[register] = None
-                    continue
-                try:
-                    config[register] = (await self.client.read_holding(register, 1))[0]
-                except AirgenioConnectionError:
-                    raise
-                except AirgenioModbusError:
-                    # The unit rejected this specific register (models differ
-                    # in which SERVICE registers they expose). Mark it
-                    # unsupported once; its entities become unavailable.
-                    _LOGGER.warning(
-                        "Register %s is not supported by this unit; the related"
-                        " entity will be unavailable",
-                        register,
-                    )
-                    self._unsupported_registers.add(register)
-                    config[register] = None
+            now = time.monotonic()
+            if (
+                not self._config
+                or self._force_config_refresh
+                or now - self._last_config_update >= SLOW_SCAN_INTERVAL
+            ):
+                await self._async_update_config()
+                self._last_config_update = now
+            self._force_config_refresh = False
         except AirgenioModbusError as err:
             raise UpdateFailed(str(err)) from err
 
@@ -115,12 +114,34 @@ class AirgenioCoordinator(DataUpdateCoordinator[AirgenioData]):
             airflow_target_permille=share_reg(21002),
             temp_setpoint=share_reg(21003),
             day_night=bool(share_reg(21009)),
-            bms_outside_enable=_opt_bool(config[REG_BMS_OUTSIDE_ENABLE]),
-            ventilation_mode_raw=config[REG_VENTILATION_MODE],
-            temp_sensor_selection=config[REG_TEMP_SENSOR_SELECTION],
-            auto_temp_control=_opt_bool(config[REG_AUTO_TEMP_CONTROL]),
-            auto_fan_control=_opt_bool(config[REG_AUTO_FAN_CONTROL]),
+            bms_outside_enable=_opt_bool(self._config[REG_BMS_OUTSIDE_ENABLE]),
+            ventilation_mode_raw=self._config[REG_VENTILATION_MODE],
+            temp_sensor_selection=self._config[REG_TEMP_SENSOR_SELECTION],
+            auto_temp_control=_opt_bool(self._config[REG_AUTO_TEMP_CONTROL]),
+            auto_fan_control=_opt_bool(self._config[REG_AUTO_FAN_CONTROL]),
         )
+
+    async def _async_update_config(self) -> None:
+        """Read slow-changing configuration registers."""
+        for register in CONFIG_REGISTERS:
+            if register in self._unsupported_registers:
+                self._config[register] = None
+                continue
+            try:
+                self._config[register] = (
+                    await self.client.read_holding(register, 1)
+                )[0]
+            except AirgenioConnectionError:
+                raise
+            except AirgenioModbusError:
+                _LOGGER.warning(
+                    "Documentation register %s (raw %s) is unsupported; related "
+                    "entity will be unavailable",
+                    register,
+                    register - 1,
+                )
+                self._unsupported_registers.add(register)
+                self._config[register] = None
 
 
 def _opt_bool(raw: int | None) -> bool | None:

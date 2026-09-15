@@ -6,6 +6,25 @@ versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-15
+
+### Changed
+
+- Generalized device metadata and documentation for AirGENIO-controlled units,
+  including DAPHNE compatibility.
+- Added VENUS/DAPHNE model selection. Existing entries migrate to VENUS.
+- DAPHNE presents shared register 21009 as Boost; VENUS retains Night profile.
+- Migrated to Home Assistant 2026.9 shared Modbus connections with serialized,
+  paced requests and stale-link recycling after communication failures.
+- Changed default polling to 60 seconds and cached configuration registers for
+  30 minutes, reducing regular polling from seven transactions to two.
+- Fan percentage writes now start a stopped unit and verify state through one
+  refreshed runtime block instead of an extra single-register read.
+
+### Tests
+
+- Added coverage proving the DAPHNE Boost and airflow raw-address mappings.
+
 ## [1.1.0] - 2026-08-28
 
 ### Added

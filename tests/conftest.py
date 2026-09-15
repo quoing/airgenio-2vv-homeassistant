@@ -8,10 +8,14 @@ import pytest
 from homeassistant.const import CONF_HOST, CONF_PORT
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.airgenio_2vv.const import CONF_UNIT_ID, DOMAIN
+from custom_components.airgenio_2vv.const import (
+    CONF_MODEL,
+    CONF_UNIT_ID,
+    DOMAIN,
+    MODEL_VENUS,
+)
 from custom_components.airgenio_2vv.modbus_client import (
     AirgenioModbusError,
-    AirgenioWriteMismatchError,
 )
 
 pytest_plugins = "pytest_homeassistant_custom_component"
@@ -68,6 +72,8 @@ class FakeModbusClient:
         self.input_regs = {**STATUS_BLOCK, **INFO_REGS}
         self.holding_regs = dict(HOLDING_REGS)
         self.writes: list[tuple[int, int]] = []
+        self.input_reads: list[tuple[int, int]] = []
+        self.holding_reads: list[tuple[int, int]] = []
         self.fail_reads = False
         self.fail_writes = False
         self.unsupported: set[int] = set()
@@ -77,11 +83,13 @@ class FakeModbusClient:
         self.closed = True
 
     async def read_input(self, doc_address: int, count: int = 1) -> list[int]:
+        self.input_reads.append((doc_address, count))
         if self.fail_reads:
             raise AirgenioModbusError("read failed (test)")
         return [self.input_regs.get(doc_address + i, 0) for i in range(count)]
 
     async def read_holding(self, doc_address: int, count: int = 1) -> list[int]:
+        self.holding_reads.append((doc_address, count))
         if self.fail_reads:
             raise AirgenioModbusError("read failed (test)")
         if doc_address in self.unsupported:
@@ -95,15 +103,6 @@ class FakeModbusClient:
             raise AirgenioModbusError("write failed (test)")
         self.holding_regs[doc_address] = value
         self.writes.append((doc_address, value))
-
-    async def write_verified(self, doc_address: int, value: int) -> None:
-        await self.write_register(doc_address, value)
-        readback = (await self.read_holding(doc_address, 1))[0]
-        if readback != value:
-            raise AirgenioWriteMismatchError(
-                f"Register {doc_address} reads back {readback}"
-            )
-
 
 @pytest.fixture(autouse=True)
 def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
@@ -124,7 +123,13 @@ def mock_config_entry() -> MockConfigEntry:
         domain=DOMAIN,
         title="AirGENIO 192.168.1.100",
         unique_id="192.168.1.100:502:1",
-        data={CONF_HOST: "192.168.1.100", CONF_PORT: 502, CONF_UNIT_ID: 1},
+        data={
+            CONF_HOST: "192.168.1.100",
+            CONF_PORT: 502,
+            CONF_UNIT_ID: 1,
+            CONF_MODEL: MODEL_VENUS,
+        },
+        version=2,
     )
 
 

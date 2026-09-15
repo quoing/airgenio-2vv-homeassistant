@@ -13,6 +13,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
+from custom_components.airgenio_2vv.const import CONF_MODEL, MODEL_DAPHNE
+
 
 def entity_id_for(hass: HomeAssistant, unique_suffix: str) -> str:
     """Resolve an entity_id from our unique-id scheme."""
@@ -77,6 +79,23 @@ async def test_fan_writes(hass: HomeAssistant, init_integration, mock_client) ->
     assert (21001, 1) in mock_client.writes
 
 
+async def test_percentage_turns_off_unit_on(
+    hass: HomeAssistant, init_integration, mock_client
+) -> None:
+    """Setting nonzero percentage also starts a stopped unit."""
+    mock_client.holding_regs[21001] = 0
+    await init_integration.runtime_data.async_refresh()
+
+    await hass.services.async_call(
+        "fan",
+        "set_percentage",
+        {"entity_id": entity_id_for(hass, "fan"), "percentage": 40},
+        blocking=True,
+    )
+
+    assert mock_client.writes[-2:] == [(21002, 400), (21001, 1)]
+
+
 async def test_switch_and_button_writes(
     hass: HomeAssistant, init_integration, mock_client
 ) -> None:
@@ -123,7 +142,7 @@ async def test_coordinator_failure_makes_entities_unavailable(
 ) -> None:
     """A poll failure flips entities to unavailable; recovery restores them."""
     mock_client.fail_reads = True
-    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=31))
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
     await hass.async_block_till_done()
     assert (
         hass.states.get(entity_id_for(hass, "outside_temperature")).state
@@ -131,17 +150,49 @@ async def test_coordinator_failure_makes_entities_unavailable(
     )
 
     mock_client.fail_reads = False
-    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=62))
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=122))
     await hass.async_block_till_done()
     assert hass.states.get(entity_id_for(hass, "outside_temperature")).state == "25.3"
 
 
+async def test_regular_refresh_only_reads_runtime_blocks(
+    init_integration, mock_client
+) -> None:
+    """Slow configuration registers are omitted from normal polling."""
+    mock_client.input_reads.clear()
+    mock_client.holding_reads.clear()
+
+    await init_integration.runtime_data.async_refresh()
+
+    assert mock_client.input_reads == [(18000, 17)]
+    assert mock_client.holding_reads == [(21001, 9)]
+
+
 async def test_unload(hass: HomeAssistant, init_integration, mock_client) -> None:
-    """Unloading closes the client."""
+    """Unloading releases entities and shared connection ownership."""
     assert await hass.config_entries.async_unload(init_integration.entry_id)
     await hass.async_block_till_done()
     assert init_integration.state is ConfigEntryState.NOT_LOADED
-    assert mock_client.closed
+
+
+async def test_daphne_uses_boost_name(
+    hass: HomeAssistant, mock_config_entry, mock_client
+) -> None:
+    """Daphne profile presents shared register as Boost."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        data={**mock_config_entry.data, CONF_MODEL: MODEL_DAPHNE},
+    )
+    with patch(
+        "custom_components.airgenio_2vv.AirgenioModbusClient",
+        return_value=mock_client,
+    ):
+        assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get(entity_id_for(hass, "day_night_mode"))
+    assert state.attributes["friendly_name"].endswith("Boost")
 
 
 async def test_unsupported_config_register(
