@@ -83,6 +83,7 @@
     },
     "number": {
       "temperature_setpoint": { "name": "Žádaná teplota" },
+      "fan_percentage": { "name": "Výkon ventilátoru" },
       "bms_outside_temperature": { "name": "BMS venkovní teplota" },
       "bms_room_temperature": { "name": "BMS teplota místnosti" }
     },

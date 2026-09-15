@@ -22,6 +22,7 @@
     },
     "number": {
       "temperature_setpoint": { "default": "mdi:thermostat" },
+      "fan_percentage": { "default": "mdi:fan" },
       "bms_outside_temperature": { "default": "mdi:upload-network" },
       "bms_room_temperature": { "default": "mdi:upload-network" }
     },

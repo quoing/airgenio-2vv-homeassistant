@@ -83,6 +83,7 @@
     },
     "number": {
       "temperature_setpoint": { "name": "Temperature setpoint" },
+      "fan_percentage": { "name": "Fan speed" },
       "bms_outside_temperature": { "name": "BMS outside temperature" },
       "bms_room_temperature": { "name": "BMS room temperature" }
     },

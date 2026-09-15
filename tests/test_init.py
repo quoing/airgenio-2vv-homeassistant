@@ -194,6 +194,28 @@ async def test_daphne_uses_boost_name(
     state = hass.states.get(entity_id_for(hass, "day_night_mode"))
     assert state.attributes["friendly_name"].endswith("Boost")
 
+    fan_percentage = entity_id_for(hass, "fan_percentage")
+    percentage_state = hass.states.get(fan_percentage)
+    assert percentage_state.state == "20"
+    assert percentage_state.attributes["min"] == 20
+    assert percentage_state.attributes["max"] == 100
+
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": fan_percentage, "value": 40},
+        blocking=True,
+    )
+    assert mock_client.writes[-1] == (21002, 400)
+
+    await hass.services.async_call(
+        "fan",
+        "set_percentage",
+        {"entity_id": entity_id_for(hass, "fan"), "percentage": 10},
+        blocking=True,
+    )
+    assert mock_client.writes[-1] == (21002, 200)
+
 
 async def test_unsupported_config_register(
     hass: HomeAssistant, mock_config_entry, mock_client

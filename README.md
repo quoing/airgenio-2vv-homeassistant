@@ -30,6 +30,7 @@ sockets to the same controller.
 | Entity | Type | Notes |
 |---|---|---|
 | Ventilation unit | `fan` | on/off + airflow 0-100 % (maps to the unit's ‰ register); `actual_power` attribute |
+| Fan speed | `number` | DAPHNE only; 20-100 % slider shown in device Controls |
 | Temperature setpoint | `number` | 15-45 °C (effective range depends on the selected sensor) |
 | Outside / supply / extract / room temperature | `sensor` | room shows *unavailable* when no room sensor is connected |
 | Water return temperature | `sensor` (diagnostic, disabled) | only meaningful with a water heater |

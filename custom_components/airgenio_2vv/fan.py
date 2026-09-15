@@ -9,7 +9,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import REG_AIRFLOW_MANUAL, REG_SWITCH_ON
+from .const import (
+    CONF_MODEL,
+    DEFAULT_MODEL,
+    MODEL_DAPHNE,
+    REG_AIRFLOW_MANUAL,
+    REG_SWITCH_ON,
+)
 from .coordinator import Airgenio2vvConfigEntry
 from .entity import AirgenioEntity
 
@@ -61,6 +67,7 @@ class AirgenioFan(AirgenioEntity, FanEntity):
         if percentage == 0:
             await self.async_turn_off()
             return
+        percentage = max(self._minimum_percentage, percentage)
         await self._write_only(REG_AIRFLOW_MANUAL, percentage * 10)
         if not self.coordinator.data.switch_on:
             await self._write_only(REG_SWITCH_ON, 1)
@@ -75,7 +82,7 @@ class AirgenioFan(AirgenioEntity, FanEntity):
     ) -> None:
         """Turn the unit on, optionally at a given airflow."""
         if percentage is not None and percentage > 0:
-            percentage = min(100, percentage)
+            percentage = max(self._minimum_percentage, min(100, percentage))
             await self._write_only(REG_AIRFLOW_MANUAL, percentage * 10)
         await self._write_only(REG_SWITCH_ON, 1)
         await self.coordinator.async_refresh()
@@ -106,3 +113,13 @@ class AirgenioFan(AirgenioEntity, FanEntity):
                 f"Fan target reads back {observed}% after writing {percentage}%. "
                 "Automatic fan control may own the airflow setpoint."
             )
+
+    @property
+    def _minimum_percentage(self) -> int:
+        """Return model-specific minimum running percentage."""
+        if (
+            self.coordinator.config_entry.data.get(CONF_MODEL, DEFAULT_MODEL)
+            == MODEL_DAPHNE
+        ):
+            return 20
+        return 1
