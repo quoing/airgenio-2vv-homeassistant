@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import REG_AIRFLOW_MANUAL, REG_SWITCH_ON
@@ -56,10 +57,15 @@ class AirgenioFan(AirgenioEntity, FanEntity):
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the airflow; 0 % turns the unit off."""
+        percentage = max(0, min(100, percentage))
         if percentage == 0:
             await self.async_turn_off()
             return
-        await self._write_verified(REG_AIRFLOW_MANUAL, percentage * 10)
+        await self._write_only(REG_AIRFLOW_MANUAL, percentage * 10)
+        if not self.coordinator.data.switch_on:
+            await self._write_only(REG_SWITCH_ON, 1)
+        await self.coordinator.async_refresh()
+        self._verify_fan_state(percentage, expected_on=True)
 
     async def async_turn_on(
         self,
@@ -68,10 +74,35 @@ class AirgenioFan(AirgenioEntity, FanEntity):
         **kwargs: Any,
     ) -> None:
         """Turn the unit on, optionally at a given airflow."""
-        await self._write_verified(REG_SWITCH_ON, 1)
         if percentage is not None and percentage > 0:
-            await self._write_verified(REG_AIRFLOW_MANUAL, percentage * 10)
+            percentage = min(100, percentage)
+            await self._write_only(REG_AIRFLOW_MANUAL, percentage * 10)
+        await self._write_only(REG_SWITCH_ON, 1)
+        await self.coordinator.async_refresh()
+        self._verify_fan_state(percentage, expected_on=True)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the unit off."""
-        await self._write_verified(REG_SWITCH_ON, 0)
+        await self._write_and_refresh(
+            REG_SWITCH_ON, 0, lambda data: data.switch_on
+        )
+
+    def _verify_fan_state(
+        self, percentage: int | None, *, expected_on: bool
+    ) -> None:
+        """Verify refreshed power and percentage state."""
+        if not self.coordinator.last_update_success:
+            raise HomeAssistantError(
+                "Fan command was written, but refreshing its state failed"
+            )
+        data = self.coordinator.data
+        if data.switch_on is not expected_on:
+            raise HomeAssistantError("Fan power state did not accept the command")
+        if percentage is None:
+            return
+        observed = round(data.airflow_target_permille / 10)
+        if observed != percentage:
+            raise HomeAssistantError(
+                f"Fan target reads back {observed}% after writing {percentage}%. "
+                "Automatic fan control may own the airflow setpoint."
+            )

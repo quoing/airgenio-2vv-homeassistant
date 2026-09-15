@@ -30,6 +30,7 @@
     },
     "switch": {
       "day_night_mode": { "default": "mdi:theme-light-dark" },
+      "boost": { "default": "mdi:fan-plus" },
       "automatic_temperature_control": { "default": "mdi:thermostat-auto" },
       "automatic_fan_control": { "default": "mdi:fan-auto" },
       "bms_outside_enable": { "default": "mdi:cloud-upload" }

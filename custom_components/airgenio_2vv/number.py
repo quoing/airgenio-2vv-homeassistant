@@ -118,4 +118,9 @@ class AirgenioNumber(AirgenioEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Write the value to the unit (with read-back verification)."""
         raw = round(value * self.entity_description.write_scale)
-        await self._write_verified(self.entity_description.register, raw)
+        await self._write_and_refresh(
+            self.entity_description.register,
+            raw,
+            self.entity_description.value_fn,
+            expected_value=value,
+        )

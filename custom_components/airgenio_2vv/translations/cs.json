@@ -7,12 +7,14 @@
         "data": {
           "host": "Adresa",
           "port": "Port",
-          "unit_id": "Modbus ID jednotky"
+          "unit_id": "Modbus ID jednotky",
+          "model": "Model jednotky"
         },
         "data_description": {
           "host": "IP adresa nebo hostname jednotky",
           "port": "Port Modbus TCP (výchozí 502)",
-          "unit_id": "Modbus adresa jednotky (výchozí 1)"
+          "unit_id": "Modbus adresa jednotky (výchozí 1)",
+          "model": "DAPHNE vyberte pouze pro jednotku DAPHNE; stávající instalace používají VENUS"
         }
       },
       "reconfigure": {
@@ -20,7 +22,8 @@
         "data": {
           "host": "Adresa",
           "port": "Port",
-          "unit_id": "Modbus ID jednotky"
+          "unit_id": "Modbus ID jednotky",
+          "model": "Model jednotky"
         }
       }
     },
@@ -41,7 +44,7 @@
           "scan_interval": "Interval dotazování (sekundy)"
         },
         "data_description": {
-          "scan_interval": "Jak často se jednotka dotazuje přes Modbus (10-300 s)"
+          "scan_interval": "Jak často se jednotka dotazuje přes Modbus (30-300 s)"
         }
       }
     }
@@ -97,6 +100,7 @@
     },
     "switch": {
       "day_night_mode": { "name": "Noční profil" },
+      "boost": { "name": "Boost" },
       "automatic_temperature_control": { "name": "Automatická regulace teploty" },
       "automatic_fan_control": { "name": "Automatická regulace ventilátorů" },
       "bms_outside_enable": { "name": "BMS venkovní čidlo" }

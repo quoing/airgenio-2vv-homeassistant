@@ -7,12 +7,14 @@
         "data": {
           "host": "Host",
           "port": "Port",
-          "unit_id": "Modbus unit ID"
+          "unit_id": "Modbus unit ID",
+          "model": "Unit model"
         },
         "data_description": {
           "host": "IP address or hostname of the unit",
           "port": "Modbus TCP port (default 502)",
-          "unit_id": "Modbus slave address of the unit (default 1)"
+          "unit_id": "Modbus slave address of the unit (default 1)",
+          "model": "Select DAPHNE only for a DAPHNE unit; existing installations default to VENUS"
         }
       },
       "reconfigure": {
@@ -20,7 +22,8 @@
         "data": {
           "host": "Host",
           "port": "Port",
-          "unit_id": "Modbus unit ID"
+          "unit_id": "Modbus unit ID",
+          "model": "Unit model"
         }
       }
     },
@@ -41,7 +44,7 @@
           "scan_interval": "Polling interval (seconds)"
         },
         "data_description": {
-          "scan_interval": "How often the unit is polled over Modbus (10-300 s)"
+          "scan_interval": "How often the unit is polled over Modbus (30-300 s)"
         }
       }
     }
@@ -97,6 +100,7 @@
     },
     "switch": {
       "day_night_mode": { "name": "Night profile" },
+      "boost": { "name": "Boost" },
       "automatic_temperature_control": { "name": "Automatic temperature control" },
       "automatic_fan_control": { "name": "Automatic fan control" },
       "bms_outside_enable": { "name": "BMS outside sensor" }

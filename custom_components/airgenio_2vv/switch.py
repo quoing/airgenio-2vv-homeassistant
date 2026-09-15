@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
@@ -12,6 +12,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
+    CONF_MODEL,
+    CONFIG_REGISTERS,
+    DEFAULT_MODEL,
+    MODEL_DAPHNE,
     REG_AUTO_FAN_CONTROL,
     REG_AUTO_TEMP_CONTROL,
     REG_BMS_OUTSIDE_ENABLE,
@@ -32,12 +36,14 @@ class AirgenioSwitchDescription(SwitchEntityDescription):
     value_fn: Callable[[AirgenioData], bool | None]
 
 
+DAY_NIGHT_SWITCH = AirgenioSwitchDescription(
+    key="day_night_mode",
+    register=REG_DAY_NIGHT,
+    value_fn=lambda d: d.day_night,
+)
+
 SWITCHES: tuple[AirgenioSwitchDescription, ...] = (
-    AirgenioSwitchDescription(
-        key="day_night_mode",
-        register=REG_DAY_NIGHT,
-        value_fn=lambda d: d.day_night,
-    ),
+    DAY_NIGHT_SWITCH,
     AirgenioSwitchDescription(
         key="automatic_temperature_control",
         entity_category=EntityCategory.CONFIG,
@@ -66,8 +72,11 @@ async def async_setup_entry(
 ) -> None:
     """Set up the switch entities."""
     coordinator = entry.runtime_data
+    switches = SWITCHES
+    if entry.data.get(CONF_MODEL, DEFAULT_MODEL) == MODEL_DAPHNE:
+        switches = (replace(DAY_NIGHT_SWITCH, translation_key="boost"), *SWITCHES[1:])
     async_add_entities(
-        AirgenioSwitch(coordinator, description) for description in SWITCHES
+        AirgenioSwitch(coordinator, description) for description in switches
     )
 
 
@@ -84,6 +93,7 @@ class AirgenioSwitch(AirgenioEntity, SwitchEntity):
         """Initialize the switch."""
         super().__init__(coordinator, description.key)
         self.entity_description = description
+        self._attr_translation_key = description.translation_key or description.key
 
     @property
     def is_on(self) -> bool | None:
@@ -97,8 +107,18 @@ class AirgenioSwitch(AirgenioEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Write 1 to the register."""
-        await self._write_verified(self.entity_description.register, 1)
+        await self._write_and_refresh(
+            self.entity_description.register,
+            1,
+            self.entity_description.value_fn,
+            refresh_config=self.entity_description.register in CONFIG_REGISTERS,
+        )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Write 0 to the register."""
-        await self._write_verified(self.entity_description.register, 0)
+        await self._write_and_refresh(
+            self.entity_description.register,
+            0,
+            self.entity_description.value_fn,
+            refresh_config=self.entity_description.register in CONFIG_REGISTERS,
+        )

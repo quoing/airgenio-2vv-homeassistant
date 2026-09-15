@@ -1,29 +1,23 @@
-"""Async Modbus TCP client wrapper for 2VV AirGENIO units.
+"""Modbus client adapter for 2VV AirGENIO units.
 
-Responsibilities:
-- translate DOC addresses (PLC BASE1, as printed in the 2VV manual) to
-  on-wire 0-based addresses — the only place in the code base that does so,
-- serialize all transactions behind one lock (the unit is a small PLC),
-- reconnect with exponential backoff,
-- raise typed exceptions with function/address context.
+Home Assistant owns and shares the physical connection. This adapter keeps
+AirGENIO's one-based documentation addresses out of transport-facing code and
+normalizes backend exceptions for the integration.
 """
 
 from __future__ import annotations
 
-import asyncio
-import logging
-import time
+from contextlib import suppress
 
-from pymodbus.client import AsyncModbusTcpClient
-from pymodbus.exceptions import ModbusException
+from modbus_connection import (
+    ModbusConnectionError,
+    ModbusError,
+    ModbusProtocolError,
+    ModbusTimeoutError,
+    ModbusUnit,
+)
 
-_LOGGER = logging.getLogger(__name__)
-
-# Pause between transactions; the unit misbehaves when hammered.
-_INTER_FRAME_DELAY_S = 0.03
-_TIMEOUT_S = 5.0
-_BACKOFF_START_S = 1.0
-_BACKOFF_MAX_S = 60.0
+from .const import MESSAGE_SPACING
 
 
 class AirgenioModbusError(Exception):
@@ -34,120 +28,68 @@ class AirgenioConnectionError(AirgenioModbusError):
     """The unit is not reachable."""
 
 
-class AirgenioWriteMismatchError(AirgenioModbusError):
-    """A written value did not read back as expected."""
-
-
 class AirgenioModbusClient:
-    """Thin async wrapper around AsyncModbusTcpClient."""
+    """Adapt a Home Assistant shared Modbus unit for AirGENIO."""
 
-    def __init__(self, host: str, port: int, unit_id: int) -> None:
-        """Initialize the client (no I/O)."""
-        self._host = host
-        self._port = port
-        self._unit_id = unit_id
-        self._client = AsyncModbusTcpClient(host, port=port, timeout=_TIMEOUT_S)
-        self._lock = asyncio.Lock()
-        self._backoff = _BACKOFF_START_S
-        self._next_connect_attempt = 0.0
+    def __init__(self, unit: ModbusUnit) -> None:
+        """Initialize the adapter without opening another connection."""
+        self._unit = unit
+        self._unit.set_message_spacing(MESSAGE_SPACING)
 
     @property
-    def host(self) -> str:
-        """Return the configured host."""
-        return self._host
-
-    async def close(self) -> None:
-        """Close the underlying connection."""
-        async with self._lock:
-            self._client.close()
-
-    async def _ensure_connected(self) -> None:
-        """Connect if needed, honoring the reconnect backoff."""
-        if self._client.connected:
-            return
-        now = time.monotonic()
-        if now < self._next_connect_attempt:
-            raise AirgenioConnectionError(
-                f"Not connected to {self._host}:{self._port} "
-                f"(retrying in {self._next_connect_attempt - now:.0f} s)"
-            )
-        connected = await self._client.connect()
-        if not connected:
-            self._next_connect_attempt = now + self._backoff
-            self._backoff = min(self._backoff * 2, _BACKOFF_MAX_S)
-            raise AirgenioConnectionError(
-                f"Cannot connect to {self._host}:{self._port}"
-            )
-        self._backoff = _BACKOFF_START_S
-        self._next_connect_attempt = 0.0
+    def connected(self) -> bool:
+        """Return whether shared transport is currently connected."""
+        return self._unit.connected
 
     async def read_input(self, doc_address: int, count: int = 1) -> list[int]:
-        """Read input registers (FC04) at a DOC address."""
-        return await self._read(doc_address, count, input_registers=True)
+        """Read input registers using a one-based documentation address."""
+        try:
+            return await self._unit.read_input_registers(doc_address - 1, count)
+        except (ModbusConnectionError, ModbusTimeoutError, ModbusProtocolError) as err:
+            await self._disconnect()
+            raise AirgenioConnectionError(
+                f"Read of {count} input register(s) at documentation address "
+                f"{doc_address} (raw {doc_address - 1}) failed: {err}"
+            ) from err
+        except ModbusError as err:
+            raise AirgenioModbusError(
+                f"Unit rejected read of {count} input register(s) at "
+                f"documentation address {doc_address} (raw {doc_address - 1}): {err}"
+            ) from err
 
     async def read_holding(self, doc_address: int, count: int = 1) -> list[int]:
-        """Read holding registers (FC03) at a DOC address."""
-        return await self._read(doc_address, count, input_registers=False)
-
-    async def _read(
-        self, doc_address: int, count: int, *, input_registers: bool
-    ) -> list[int]:
-        kind = "input" if input_registers else "holding"
-        async with self._lock:
-            await self._ensure_connected()
-            try:
-                if input_registers:
-                    result = await self._client.read_input_registers(
-                        doc_address - 1, count=count, device_id=self._unit_id
-                    )
-                else:
-                    result = await self._client.read_holding_registers(
-                        doc_address - 1, count=count, device_id=self._unit_id
-                    )
-            except ModbusException as err:
-                self._client.close()
-                raise AirgenioConnectionError(
-                    f"Read of {count} {kind} register(s) at {doc_address} failed: {err}"
-                ) from err
-            if result.isError():
-                raise AirgenioModbusError(
-                    f"Unit rejected read of {count} {kind} register(s) "
-                    f"at {doc_address}: {result}"
-                )
-            await asyncio.sleep(_INTER_FRAME_DELAY_S)
-            return list(result.registers)
+        """Read holding registers using a one-based documentation address."""
+        try:
+            return await self._unit.read_holding_registers(doc_address - 1, count)
+        except (ModbusConnectionError, ModbusTimeoutError, ModbusProtocolError) as err:
+            await self._disconnect()
+            raise AirgenioConnectionError(
+                f"Read of {count} holding register(s) at documentation address "
+                f"{doc_address} (raw {doc_address - 1}) failed: {err}"
+            ) from err
+        except ModbusError as err:
+            raise AirgenioModbusError(
+                f"Unit rejected read of {count} holding register(s) at "
+                f"documentation address {doc_address} (raw {doc_address - 1}): {err}"
+            ) from err
 
     async def write_register(self, doc_address: int, value: int) -> None:
-        """Write a single holding register (FC06) at a DOC address."""
-        async with self._lock:
-            await self._ensure_connected()
-            try:
-                result = await self._client.write_register(
-                    doc_address - 1, value, device_id=self._unit_id
-                )
-            except ModbusException as err:
-                self._client.close()
-                raise AirgenioConnectionError(
-                    f"Write of {value} to register {doc_address} failed: {err}"
-                ) from err
-            if result.isError():
-                raise AirgenioModbusError(
-                    f"Unit rejected write of {value} to register {doc_address}: "
-                    f"{result}"
-                )
-            await asyncio.sleep(_INTER_FRAME_DELAY_S)
+        """Write one holding register using a documentation address."""
+        try:
+            await self._unit.write_register(doc_address - 1, value)
+        except (ModbusConnectionError, ModbusTimeoutError, ModbusProtocolError) as err:
+            await self._disconnect()
+            raise AirgenioConnectionError(
+                f"Write of {value} to documentation address {doc_address} "
+                f"(raw {doc_address - 1}) failed: {err}"
+            ) from err
+        except ModbusError as err:
+            raise AirgenioModbusError(
+                f"Unit rejected write of {value} to documentation address "
+                f"{doc_address} (raw {doc_address - 1}): {err}"
+            ) from err
 
-    async def write_verified(self, doc_address: int, value: int) -> None:
-        """Write a holding register and verify it by reading it back."""
-        await self.write_register(doc_address, value)
-        readback = (await self.read_holding(doc_address, 1))[0]
-        if readback != value:
-            _LOGGER.warning(
-                "Register %s read back %s after writing %s",
-                doc_address,
-                readback,
-                value,
-            )
-            raise AirgenioWriteMismatchError(
-                f"Register {doc_address} reads back {readback} after writing {value}"
-            )
+    async def _disconnect(self) -> None:
+        """Recycle a failed shared link without releasing connection ownership."""
+        with suppress(ModbusError):
+            await self._unit.disconnect()
