@@ -1,6 +1,6 @@
 [project]
 name = "airgenio-2vv-homeassistant"
-version = "2.0.0"
+version = "2.0.1"
 description = "Home Assistant custom integration for 2VV AirGENIO ventilation units (Modbus TCP)"
 readme = "README.md"
 requires-python = ">=3.14.2"

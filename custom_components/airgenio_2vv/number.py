@@ -12,11 +12,15 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.const import EntityCategory, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import (
+    CONF_MODEL,
+    DEFAULT_MODEL,
+    MODEL_DAPHNE,
+    REG_AIRFLOW_MANUAL,
     REG_BMS_OUTSIDE_WRITE,
     REG_BMS_ROOM_WRITE,
     REG_TEMP_SETPOINT,
@@ -83,6 +87,18 @@ NUMBERS: tuple[AirgenioNumberDescription, ...] = (
     ),
 )
 
+DAPHNE_FAN_PERCENTAGE = AirgenioNumberDescription(
+    key="fan_percentage",
+    native_unit_of_measurement=PERCENTAGE,
+    native_min_value=20,
+    native_max_value=100,
+    native_step=1,
+    mode=NumberMode.SLIDER,
+    register=REG_AIRFLOW_MANUAL,
+    value_fn=lambda d: round(d.airflow_target_permille / 10),
+    write_scale=10,
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -91,8 +107,11 @@ async def async_setup_entry(
 ) -> None:
     """Set up the number entities."""
     coordinator = entry.runtime_data
+    numbers = NUMBERS
+    if entry.data.get(CONF_MODEL, DEFAULT_MODEL) == MODEL_DAPHNE:
+        numbers = (*NUMBERS, DAPHNE_FAN_PERCENTAGE)
     async_add_entities(
-        AirgenioNumber(coordinator, description) for description in NUMBERS
+        AirgenioNumber(coordinator, description) for description in numbers
     )
 
 
